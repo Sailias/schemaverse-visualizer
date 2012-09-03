@@ -1,2 +1,2 @@
 RewriteEngine on
-RewriteRule   ^(.*).json$  $1.php
+RewriteRule  ^(.*).json$  $1.php
