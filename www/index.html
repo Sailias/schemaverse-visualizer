@@ -6,16 +6,6 @@
 		<link rel="stylesheet" href="css/style.css">
 	</head>
 	<body>
-		<script type="text/javascript">var _gaq = _gaq || [];
-			_gaq.push(['_setAccount', 'UA-9077914-2']);
-			_gaq.push(['_trackPageview']);
-			_gaq.push(['_trackPageLoadTime']);
-			(function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
-			})();
-		</script>
 		<div id="container">
 			<div class="growl">
 			</div>
@@ -26,14 +16,17 @@
 				<table class="table table-bordered table-striped table-condensed">
 					<thead>
 						<tr>
-							<th></th>
-							<th>Player</th>
-							<th>Net Worth</th>
-							<th>Fleet Size</th>
-							<th>Conquered</th>
+							<th>Tic</th>
+							<th>Planets Conquered this tic</th>
+                            <th>Total Planets</th>
 						</tr>
 					</thead>
 					<tbody>
+                        <tr>
+                            <td id="tic_value">1</td>
+                            <td id="planets_tic">0</td>
+                            <td id="total_planets">0</td>
+                        </tr>
 					</tbody>
 				</table>
 			</div>

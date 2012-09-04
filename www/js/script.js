@@ -2,6 +2,7 @@ var schemaverse = {
   common:{
     players:[],
     previousShips:[],
+    currentTic:-1,
     color:d3.scale.category20(),
     init:function () {
       var playersInterval = setInterval(schemaverse.common.getPlayers, 300000);
@@ -48,15 +49,6 @@ var schemaverse = {
       });
     },
 
-    movePlanets:function (vis, x, y) {
-      planets = vis.selectAll("text.planet")
-        .transition()
-        .duration(4000)
-        .attr("transform", function (d) {
-          return "translate(" + x(d.location_x) + "," + y(d.location_y) + ")";
-        });
-    },
-
     drawPlanets:function (planetData, vis, x, y) {
 
       planets = vis.selectAll("text.planet")
@@ -81,14 +73,6 @@ var schemaverse = {
       planets
         .attr("class", function (d) {
           var classes = 'dot planet';
-
-          if (d.conqueror_id === null) {
-            classes += ' unclaimed';
-          }
-          else {
-            classes += ' player-' + d.conqueror_id;
-          }
-
           return classes;
         })
         .attr("fill", schemaverse.common.getColor)
@@ -96,8 +80,8 @@ var schemaverse = {
     },
     drawShips:function (shipData, vis, x, y) {
 
-      $.each(schemaverse.common.previousShips, function(i, arr) {
-        $.each(arr, function(i, ele) {
+      $.each(schemaverse.common.previousShips, function (i, arr) {
+        $.each(arr, function (i, ele) {
           $(ele).remove();
         });
       });
@@ -132,7 +116,6 @@ var schemaverse = {
     vis:null,
     x:null,
     y:null,
-    previousShips:[],
     init:function (callback) {
       var width = 753;
       var height = 753;
@@ -143,7 +126,6 @@ var schemaverse = {
       var y;
       var xrule;
       var yrule;
-
 
       var vis = schemaverse.map.vis = d3.select("#container .main")
         .append("svg")
@@ -157,10 +139,6 @@ var schemaverse = {
         .attr("width", width)
         .attr("height", height);
 
-      var $growl = $('.growl').append('<ul />').growl();
-      var tic = -1;
-      var currentTic;
-
       function getPlanets(callback) {
 
         d3.json("planets.json", function (data) {
@@ -173,20 +151,8 @@ var schemaverse = {
           planetData.map(function (d) {
             d.location_x = parseFloat(d.location_x, 10);
             d.location_y = parseFloat(d.location_y, 10);
-            d.conqueror_id = parseInt(d.conqueror_id, 10) || null;
-            if (schemaverse.common.players[d.conqueror_id]) {
-              d.conqueror_name = schemaverse.common.players[d.conqueror_id].conqueror_name;
-              d.conqueror_color = schemaverse.common.players[d.conqueror_id].rgb;
-              d.conqueror_symbol = schemaverse.common.players[d.conqueror_id].symbol;
-              schemaverse.common.players[d.conqueror_id].count++;
-            }
-
-            if (d.description !== null && d.tic !== null) {
-              currentTic = parseInt(d.tic, 10);
-            }
+            d.conqueror_id = null;
           });
-
-          tic = currentTic;
 
           if (x === undefined && y === undefined) {
 
@@ -240,70 +206,65 @@ var schemaverse = {
           if (callback && typeof callback === 'function') {
             callback();
           }
+
+          $.getJSON('tic', function (data) {
+            schemaverse.common.currentTic = data.currentTic.last_value;
+            mapTics(1)
+          });
+
         });
       }
 
-      function getShips() {
-        for (t = 1; t < 300; t++) {
-          d3.json('ships.json?tic=' + t, function (data) {
-            if(data)
-              var shipData = data.ships;
+      function mapTics(ticNumber) {
+        d3.json('map_tic.json?tic=' + ticNumber, function (data) {
+          if (data) {
+            var shipData = data.ships;
+            var planetData = data.planets;
+          }
 
-            if (shipData) {
-              shipData.map(function (d) {
-                d.location_x = parseFloat(d.location_x, 10);
-                d.location_y = parseFloat(d.location_y, 10);
-                d.conqueror_id = parseInt(d.conqueror_id, 10) || null;
-                if (schemaverse.common.players[d.conqueror_id]) {
-                  d.conqueror_name = schemaverse.common.players[d.conqueror_id].conqueror_name;
-                  d.conqueror_color = schemaverse.common.players[d.conqueror_id].rgb;
-                  d.conqueror_symbol = '@';
-                  schemaverse.common.players[d.conqueror_id].count++;
-                }
-              });
+          if (shipData && planetData) {
 
-              x = schemaverse.map.x = d3.scale.linear()
-                .range([0, width])
-                .domain(extentX)
-                .clamp(true)
-                .nice();
+            $('#tic_value').html(ticNumber);
 
-              y = schemaverse.map.y = d3.scale.linear()
-                .range([0, height])
-                .domain(extentY)
-                .clamp(true)
-                .nice();
+            shipData.map(function (d) {
+              d.location_x = parseFloat(d.location_x, 10);
+              d.location_y = parseFloat(d.location_y, 10);
+              d.conqueror_id = parseInt(d.conqueror_id, 10) || null;
+              if (schemaverse.common.players[d.conqueror_id]) {
+                d.conqueror_name = schemaverse.common.players[d.conqueror_id].conqueror_name;
+                d.conqueror_color = schemaverse.common.players[d.conqueror_id].rgb;
+                d.conqueror_symbol = '@';
+                schemaverse.common.players[d.conqueror_id].count++;
+              }
+            });
 
-              xrule = vis.selectAll("g.x")
-                .data(x.ticks(10))
-                .enter().append("g")
-                .attr("class", "x");
+            schemaverse.common.drawShips(shipData, vis, x, y);
 
-              xrule.append("line")
-                .attr("x1", x)
-                .attr("x2", x)
-                .attr("y1", 0)
-                .attr("y2", height);
+            $('#planets_tic').html(planetData.length);
+            $.each(planetData, function (i, pData) {
+              $planetText = $('#planet-' + pData.referencing_id);
 
-              yrule = vis.selectAll("g.y")
-                .data(y.ticks(10))
-                .enter().append("g")
-                .attr("class", "y");
+              // TODO: USER MY PLAYER ID!
+              if (pData.player_id_1 === "8057") {
+                $planetText.text('R').attr('fill', 'red');
+                var planetCount = parseInt($('#total_planets').html());
+                $('#total_planets').html(planetCount + 1);
+              }
+              else {
+                $planetText.text("\u26aa").attr('fill', 'black');
+                var planetCount = parseInt($('#total_planets').html());
+                $('#total_planets').html(planetCount - 1);
+              }
+            });
+          }
 
-              yrule.append("line")
-                .attr("x1", 0)
-                .attr("x2", width)
-                .attr("y1", y)
-                .attr("y2", y);
-              schemaverse.common.drawShips(shipData, vis, x, y);
-            }
-          })
-        }
+          if (ticNumber < schemaverse.common.currentTic)
+            mapTics(ticNumber + 1);
+        })
       }
 
-      getPlanets(callback);
-      getShips();
-      var planetsInterval = setInterval(getPlanets, 30000);
+      getPlanets();
+      //var planetsInterval = setInterval(getPlanets, 30000);
     }
   }
 
