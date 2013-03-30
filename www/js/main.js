@@ -2,11 +2,15 @@
 
   $(function() {
     visualizer.map.init();
-    schemaverse.getPlanets(function(planetData) {
+    return schemaverse.getPlanets(function(planetData) {
       visualizer.map.setXY(planetData);
-      return visualizer.drawPlanets(planetData);
+      visualizer.drawPlanets(planetData);
+      return schemaverse.getPlayers(function() {
+        return schemaverse.getTic(function() {
+          return schemaverse.mapTic(380);
+        });
+      });
     });
-    return console.log(window.schemaverse.planets);
   });
 
 }).call(this);

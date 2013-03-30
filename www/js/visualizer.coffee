@@ -41,8 +41,29 @@ window.visualizer =
         'dot planet'
       ).attr("fill", visualizer.getColor).text(visualizer.getSymbol)
 
-  drawShips: (shipData, vis, x, y) ->
-    # Do nothing for now
+  drawShips: (shipData) ->
+
+    # Remove all the previous ships from the map
+    for prevShipArr in schemaverse.previousShips
+      for prevShip in prevShipArr
+        $(prevShip).remove()
+    
+    # Select all the ship elements on the page
+    ships = visualizer.vis.selectAll("text.planet").data shipData, (ship) ->
+      ship.id
+
+    enter = ships.enter().append("text")
+      .attr('id', (ship) ->
+        'planet-' + ship.id
+      ).attr('dx', -5).attr('dy', 5)
+
+    if visualizer.map.x && visualizer.map.y
+      enter.attr("transform", (ship) ->
+        "translate(" + visualizer.map.x(ship.location_x) + "," + visualizer.map.y(ship.location_y) + ")"
+      )
+
+    ships.attr("fill", 'green').text('@')
+    schemaverse.previousShips.push(ships)
 
   map:    
     init: () ->

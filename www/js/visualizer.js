@@ -45,7 +45,30 @@
         }).attr("fill", visualizer.getColor).text(visualizer.getSymbol);
       }
     },
-    drawShips: function(shipData, vis, x, y) {},
+    drawShips: function(shipData) {
+      var enter, prevShip, prevShipArr, ships, _i, _j, _len, _len2, _ref;
+      _ref = schemaverse.previousShips;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        prevShipArr = _ref[_i];
+        for (_j = 0, _len2 = prevShipArr.length; _j < _len2; _j++) {
+          prevShip = prevShipArr[_j];
+          $(prevShip).remove();
+        }
+      }
+      ships = visualizer.vis.selectAll("text.planet").data(shipData, function(ship) {
+        return ship.id;
+      });
+      enter = ships.enter().append("text").attr('id', function(ship) {
+        return 'planet-' + ship.id;
+      }).attr('dx', -5).attr('dy', 5);
+      if (visualizer.map.x && visualizer.map.y) {
+        enter.attr("transform", function(ship) {
+          return "translate(" + visualizer.map.x(ship.location_x) + "," + visualizer.map.y(ship.location_y) + ")";
+        });
+      }
+      ships.attr("fill", 'green').text('@');
+      return schemaverse.previousShips.push(ships);
+    },
     map: {
       init: function() {
         var map;

@@ -4,33 +4,67 @@
     players: [],
     previousShips: [],
     currentTic: -1,
-    getTic: function() {
+    getTic: function(callback) {
       return $.getJSON('tic', function(data) {
-        return schemaverse.currentTic = data.currentTic.last_value;
+        schemaverse.currentTic = data.currentTic.last_value;
+        if (typeof callback === 'function') return callback();
       });
     },
-    getPlayers: function() {
+    getPlayers: function(callback) {
       return d3.json("players.json", function(data) {
-        var player, players, _i, _len, _results;
+        var player, players, _i, _len;
         players = schemaverse.players;
-        _results = [];
         for (_i = 0, _len = players.length; _i < _len; _i++) {
           player = players[_i];
-          if (player.conqueror_id) {
-            _results.push(players[player.conqueror_id] = player);
-          } else {
-            _results.push(void 0);
-          }
+          if (player.conqueror_id) players[player.conqueror_id] = player;
         }
-        return _results;
+        if (typeof callback === 'function') return callback();
       });
     },
-    getTicData: function(ticNumber) {
+    getTicData: function(ticNumber, callback) {
       return d3.json('map_tic.json?tic=' + ticNumber, function(data) {
-        var planetData, shipData;
+        var $planetText, pData, planetCount, planetData, shipData, _i, _len;
+        $('#tic_value').html(ticNumber);
         if (data) {
           shipData = data.ships;
-          return planetData = data.planets;
+          planetData = data.planets;
+          if (shipData && planetData) {
+            shipData.map(function(ship) {
+              ship.location_x = parseFloat(ship.location_x, 10);
+              ship.location_y = parseFloat(ship.location_y, 10);
+              ship.conqueror_id = parseInt(ship.conqueror_id, 10) || null;
+              if (schemaverse.players[ship.conqueror_id]) {
+                ship.conqueror_name = schemaverse.players[ship.conqueror_id].conqueror_name;
+                ship.conqueror_color = schemaverse.players[ship.conqueror_id].rgb;
+                ship.conqueror_symbol = '@';
+                return schemaverse.players[ship.conqueror_id].count++;
+              }
+            });
+            visualizer.drawShips(shipData);
+            $('#planets_tic').html(planetData.length);
+            for (_i = 0, _len = planetData.length; _i < _len; _i++) {
+              pData = planetData[_i];
+              $planetText = $('#planet-' + pData.referencing_id);
+              if (pData.player_id_1 === "11247") {
+                $planetText.text('R').attr('fill', 'red');
+                planetCount = parseInt($('#total_planets').html());
+                $('#total_planets').html(planetCount + 1);
+              } else {
+                $planetText.text("\u26aa").attr('fill', 'black');
+                planetCount = parseInt($('#total_planets').html());
+                $('#total_planets').html(planetCount - 1);
+              }
+            }
+          }
+          if (typeof callback === 'function') return callback();
+        }
+      });
+    },
+    mapTic: function(ticNumber) {
+      return schemaverse.getTicData(ticNumber, function() {
+        ticNumber++;
+        if (ticNumber <= schemaverse.currentTic) {
+          return schemaverse.mapTic(ticNumber);
         }
       });
     },
